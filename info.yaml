@@ -3,7 +3,7 @@
 project:
   wokwi_id:    0       # If using wokwi, set this to your project's ID
   source_files:        # If using an HDL, set wokwi_id as 0 and uncomment and list your source files here. Source files must be in ./src
-    - simon_decrypt.v
+    - simon_decrypt.sv
   top_module:  "invalidopcode_simon_decrypt"
 
 # As everyone will have access to all designs, try to make it easy for someone new to your design to know what
@@ -22,7 +22,7 @@ documentation:
   how_to_test:  >
     "TODO"     
   external_hw:  ""      # Describe any external hardware needed
-  language:     "verilog" # other examples include Verilog, Amaranth, VHDL, etc
+  language:     "SystemVerilog" # other examples include Verilog, Amaranth, VHDL, etc
   doc_link:     ""      # URL to longer form documentation, eg the README.md in your repository
   clock_hz:     1000       # Clock frequency in Hz (if required)
   picture:      ""      # relative path to a picture in your repository
