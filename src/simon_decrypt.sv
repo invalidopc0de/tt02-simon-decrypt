@@ -21,7 +21,7 @@ module simon_decrypt(
   output [3:0] data_out
 );
 
-  // Module registers
+  // SIMON decrypt module registers
   typedef struct packed {
     logic [4:0] lfsr;
     logic [63:0] key;
@@ -30,26 +30,51 @@ module simon_decrypt(
 
   simon_reg_t r, rin;
 
-// Combinational logic 
-always_comb begin 
-  rin = r;
-  // LFSR
-  if (shift == 1'b1) 
-    rin.lfsr = 5'b00001;
-  else begin 
-    rin.lfsr[4] = r.lfsr[3];
-    rin.lfsr[3] = r.lfsr[2];
-    rin.lfsr[2] = r.lfsr[4] ^ r.lfsr[1];
-    rin.lfsr[1] = r.lfsr[0];
-    rin.lfsr[0] = r.lfsr[4] ^ r.lfsr[0];
-  end 
+  wire [15:0] round_shift_1, round_shift_8, round_shift_2;
 
-  // Key scheduling 
-  rin.key = {data_in, r.key[63:4]};
-  
+  // Left ciruclar shift by 1 bit
+  assign round_shift_1 = {r.round[30:16],r.round[31]};
+  // Left ciruclar shift by 8 bits
+  assign round_shift_8 = {r.round[23:16],r.round[31:24]};
+  // Left ciruclar shift by 2 bits
+  assign round_shift_2 = {r.round[29:16],r.round[31:30]};
+
+  // Output round data when shifting
+  assign data_out = r.round[3:0];
+
+// Combinational logic 
+always @(shift,data_in,data_out,r) begin 
+  rin = r;
+
+  // LFSR for key scheduling
+  rin.lfsr[4] = r.lfsr[3];
+  rin.lfsr[3] = r.lfsr[2];
+  rin.lfsr[2] = r.lfsr[4] ^ r.lfsr[1];
+  rin.lfsr[1] = r.lfsr[0];
+  rin.lfsr[0] = r.lfsr[4] ^ r.lfsr[0];
+
+  // Key scheduling
 
   // Decrypt
-  rin.round = {r.key[3:0], r.round[31:4]};
+  // x
+  rin.round[31:16] = r.round[15:0];
+
+  // y
+  rin.round[15:0] = r.round[31:16]                      // x
+    ^ ((round_shift_1 & round_shift_8) ^ round_shift_2) // f(y)
+    ^ r.key[15:0];                                      // k
+
+  // Shift mode
+  if (shift == 1'b1) begin 
+    // Reset the lfsr 
+    rin.lfsr = 5'b00001;
+
+    // Read key from data pins
+    rin.key = {data_in, r.key[63:4]};
+
+    // Read overflow from the key register
+    rin.round = {r.key[3:0], r.round[31:4]};
+  end
 end
 
 // Register clocking
